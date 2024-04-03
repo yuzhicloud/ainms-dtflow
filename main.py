@@ -1,4 +1,4 @@
-from yzsnmp import apInfo
+from yzsnmp.apInfo import snmp_main
 
 print("begin to get snmp data")
-apInfo.snmp_main()
+snmp_main()
