@@ -14,50 +14,48 @@ def fetch_table(ip, port, user, authKey, privKey, authProtocol, privProtocol, ba
     logging.debug("Starting to fetch the SNMP table data...")
 
     table = []
-    # Iterate over each column in the table
     for col_index in range(1, max_cols + 1):
         col_oid = f"{base_oid}.{col_index}"
         logging.debug("Fetching column: %s", col_oid)
         col = []
         last_oid = ObjectIdentity(col_oid)
 
-        while True:
-            logging.debug("Fetching next entry for OID: %s", last_oid)
-            errorIndication, errorStatus, errorIndex, varBinds = next(
-                nextCmd(engine, user_data, target, context,
-                        ObjectType(last_oid),
-                        lexicographicMode=False)
-            )
+        iterator = nextCmd(engine, user_data, target, context, ObjectType(last_oid), lexicographicMode=False)
 
-            if errorIndication:
-                logging.error("Error: %s", errorIndication)
-                break
-            elif errorStatus:
-                logging.error("Error: %s at %s", errorStatus.prettyPrint(),
-                              errorIndex and varBinds[int(errorIndex) - 1][0] or '?')
-                break
-            else:
-                for varBind in varBinds:
-                    oid, value = varBind
-                    if str(oid).startswith(col_oid):
-                        logging.debug("Found value: %s for OID: %s", value.prettyPrint(), oid.prettyPrint())
-                        col.append(value.prettyPrint())
-                        last_oid = oid
-                    else:
-                        logging.debug("OID: %s is outside of the column: %s", oid.prettyPrint(), col_oid)
-                        break
-                if not str(oid).startswith(col_oid):
-                    # This means we've moved past the current column
-                    logging.debug("Completed fetching for column: %s", col_oid)
+        while True:
+            try:
+                errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+
+                if errorIndication:
+                    logging.error("Error: %s", errorIndication)
                     break
+                elif errorStatus:
+                    logging.error("Error: %s at %s", errorStatus.prettyPrint(),
+                                  errorIndex and varBinds[int(errorIndex) - 1][0] or '?')
+                    break
+                else:
+                    for varBind in varBinds:
+                        oid, value = varBind
+                        if str(oid).startswith(col_oid):
+                            logging.debug("Found value: %s for OID: %s", value.prettyPrint(), oid.prettyPrint())
+                            col.append(value.prettyPrint())
+                        else:
+                            logging.debug("OID: %s is outside of the column: %s", oid.prettyPrint(), col_oid)
+                            break
+                    if not str(oid).startswith(col_oid):
+                        # This means we've moved past the current column
+                        logging.debug("Completed fetching for column: %s", col_oid)
+                        break
+            except StopIteration:
+                break  # Properly handle the end of the iteration
 
         table.append(col)
 
-    # Transpose the table to get rows instead of columns
-    transposed_table = list(map(list, zip(*table))) if table else []
     logging.debug("Completed fetching the SNMP table data.")
+    return table
 
-    return transposed_table
+
+# Rest of your snmp_main function remains the same
 
 
 def snmp_main():
