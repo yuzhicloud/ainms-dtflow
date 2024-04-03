@@ -18,7 +18,7 @@ def get_snmp_data():
     # 感兴趣的OIDs
 
     oids = [
-        '.1.3.6.1.4.1.2011.6.139.13.3.3.1'
+        '1.3.6.1.4.1.2011.6.139.13.3.3.1'
     ]
     # oids = [
     #     '.1.3.6.1.4.1.2011.6.139.13.3.3.1.1',
@@ -34,24 +34,22 @@ def get_snmp_data():
 
     results = []
 
-    for oid in oids:
+    def get_next_oid_value(oid):
         errorIndication, errorStatus, errorIndex, varBinds = next(
             getCmd(SnmpEngine(),
                    UsmUserData(user, authKey, privKey,
                                authProtocol=authProtocol,
                                privProtocol=privProtocol),
-                   UdpTransportTarget((ip, port), timeout=3, retries=5),  # 增加超时时间和重试次数
+                   UdpTransportTarget((ip, port)),
                    ContextData(),
                    ObjectType(ObjectIdentity(oid)),
-                   lookupMib=False)  # Avoid MIB resolution
+                   lookupMib=False)
         )
 
         if errorIndication:
             print(errorIndication)
         elif errorStatus:
-            print('%s at %s' % (
-                errorStatus.prettyPrint(),
-                errorIndex and varBinds[int(errorIndex)-1][0] or '?'))
+            print('%s at %s' % (errorStatus.prettyPrint(), errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
         else:
             for varBind in varBinds:
                 oid = varBind[0].prettyPrint()
@@ -68,4 +66,3 @@ def get_snmp_data():
 
     print("完成，结果已保存到snmp_results.csv")
 
-get_snmp_data()
