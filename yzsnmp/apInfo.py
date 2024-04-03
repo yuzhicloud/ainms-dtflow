@@ -29,11 +29,11 @@ def get_snmp_data():
 
     for oid in oids:
         errorIndication, errorStatus, errorIndex, varBinds = next(
-            getCmd(SnmpEngine(),
+            nextCmd(SnmpEngine(),
                    UsmUserData(user, authKey, privKey,
                                authProtocol=authProtocol,
                                privProtocol=privProtocol),
-                   UdpTransportTarget((ip, port)),
+                   UdpTransportTarget((ip, port), timeout=3, retries=5),
                    ContextData(),
                    ObjectType(ObjectIdentity(oid)),
                    lookupMib=False)  # Use snmpget for each OID
