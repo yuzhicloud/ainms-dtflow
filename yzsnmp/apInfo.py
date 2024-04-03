@@ -5,6 +5,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
 def get_snmp_data():
+    # SNMP目标设备的配置
     ip = '10.170.69.101'
     port = 161
     user = 'clypgac'
@@ -13,26 +14,22 @@ def get_snmp_data():
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
 
-    # 设置起始OID为表的开始
-    oid_base = '1.3.6.1.4.1.2011.6.139.13.3.3.1.1'
-    # 需要捕获的最后一个OID的开始部分，用于判断何时结束遍历
-    oid_end = '1.3.6.1.4.1.2011.6.139.13.3.3.1.19'
+    # 表的根节点
+    oid_base = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
 
     results = []
 
     for (errorIndication,
          errorStatus,
          errorIndex,
-         varBinds) in bulkCmd(SnmpEngine(),
+         varBinds) in nextCmd(SnmpEngine(),
                               UsmUserData(user, authKey, privKey,
                                           authProtocol=authProtocol,
                                           privProtocol=privProtocol),
                               UdpTransportTarget((ip, port)),
                               ContextData(),
-                              0, 50,  # 非重复者，最大重复者
                               ObjectType(ObjectIdentity(oid_base)),
-                              lexicographicMode=False,  # 不超出指定的OID范围
-                              lookupMib=False):
+                              lexicographicMode=False):  # 防止遍历到表之外
 
         if errorIndication:
             logging.error(errorIndication)
@@ -43,16 +40,11 @@ def get_snmp_data():
         else:
             for varBind in varBinds:
                 oid, value = varBind
-                # 判断返回的OID是否超出了表的范围
-                if str(oid).startswith(oid_end):
+                # 确认OID仍然在表的范围内
+                if not str(oid).startswith(oid_base):
                     break
                 results.append([oid.prettyPrint(), value.prettyPrint()])
                 logging.debug('OID: %s, Value: %s', oid.prettyPrint(), value.prettyPrint())
-            else:
-                # 如果未跳出循环，则继续
-                continue
-            # 如果已处理所有数据，则跳出while循环
-            break
 
     # 保存结果到CSV文件
     with open('snmp_results.csv', 'w', newline='') as csvfile:
@@ -61,3 +53,4 @@ def get_snmp_data():
         csvwriter.writerows(results)
 
     logging.info("完成，结果已保存到snmp_results.csv")
+
