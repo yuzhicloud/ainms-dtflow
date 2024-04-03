@@ -37,7 +37,7 @@ def get_snmp_data():
                                privProtocol=privProtocol),
                    UdpTransportTarget((ip, port)),
                    ContextData(),
-                   ObjectType(ObjectIdentity(base_oid)),
+                   ObjectType(ObjectIdentity(oids)),
                    lookupMib=False)
         )
 
