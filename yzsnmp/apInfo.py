@@ -67,8 +67,7 @@ def snmp_main():
     max_cols = 18  # Number of columns in the table
 
     with open('snmp_table_data.csv', 'w', newline='', encoding='utf-8') as csvfile:
-        fetch_and_write_table_data(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
-                                   csvfile)
+        fetch_and_write_table_data(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csvfile)
 
     logging.info("Table data fetching and CSV writing completed.")
 
