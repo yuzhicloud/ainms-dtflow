@@ -13,10 +13,10 @@ def get_snmp_data():
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
 
-    # 起始OID
-    oid_start = '1.3.6.1.4.1.2011.6.139.13.3.3.1.1'
-    # 结束OID，用于判断何时停止遍历
-    oid_end = '1.3.6.1.4.1.2011.6.139.13.3.3.1.18'
+    # 设置起始OID为表的开始
+    oid_base = '1.3.6.1.4.1.2011.6.139.13.3.3.1.1'
+    # 需要捕获的最后一个OID的开始部分，用于判断何时结束遍历
+    oid_end = '1.3.6.1.4.1.2011.6.139.13.3.3.1.19'
 
     results = []
 
@@ -29,8 +29,8 @@ def get_snmp_data():
                                           privProtocol=privProtocol),
                               UdpTransportTarget((ip, port)),
                               ContextData(),
-                              0, 25,  # 非重复者，最大重复者
-                              ObjectType(ObjectIdentity(oid_start)),
+                              0, 50,  # 非重复者，最大重复者
+                              ObjectType(ObjectIdentity(oid_base)),
                               lexicographicMode=False,  # 不超出指定的OID范围
                               lookupMib=False):
 
@@ -43,14 +43,15 @@ def get_snmp_data():
         else:
             for varBind in varBinds:
                 oid, value = varBind
-                if not str(oid).startswith(oid_start[:oid_start.rfind('.')]):
-                    # 如果超出了表的范围，则停止
+                # 判断返回的OID是否超出了表的范围
+                if str(oid).startswith(oid_end):
                     break
                 results.append([oid.prettyPrint(), value.prettyPrint()])
                 logging.debug('OID: %s, Value: %s', oid.prettyPrint(), value.prettyPrint())
-
-        if not str(oid).startswith(oid_start[:oid_start.rfind('.')]):
-            # 确保当遍历到表的末尾时跳出外层循环
+            else:
+                # 如果未跳出循环，则继续
+                continue
+            # 如果已处理所有数据，则跳出while循环
             break
 
     # 保存结果到CSV文件
@@ -60,4 +61,3 @@ def get_snmp_data():
         csvwriter.writerows(results)
 
     logging.info("完成，结果已保存到snmp_results.csv")
-
