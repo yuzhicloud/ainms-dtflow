@@ -5,15 +5,15 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
 
-def fetch_table(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols):
+def fetch_table_and_write_to_csv(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
+                                 csv_writer):
     engine = SnmpEngine()
     user_data = UsmUserData(user, authKey, privKey, authProtocol=authProtocol, privProtocol=privProtocol)
     target = UdpTransportTarget((ip, port))
     context = ContextData()
 
-    logging.debug("Starting to fetch the SNMP table data...")
+    logging.debug("Starting to fetch the SNMP table data and writing to CSV...")
 
-    table = []
     for col_index in range(1, max_cols + 1):
         col_oid = f"{base_oid}.{col_index}"
         logging.debug("Fetching column: %s", col_oid)
@@ -43,23 +43,18 @@ def fetch_table(ip, port, user, authKey, privKey, authProtocol, privProtocol, ba
                             logging.debug("OID: %s is outside of the column: %s", oid.prettyPrint(), col_oid)
                             break
                     if not str(oid).startswith(col_oid):
-                        # This means we've moved past the current column
                         logging.debug("Completed fetching for column: %s", col_oid)
                         break
             except StopIteration:
-                break  # Properly handle the end of the iteration
+                break
 
-        table.append(col)
+        if col:  # 如果这一列有数据，则写入CSV文件
+            csv_writer.writerow(col)
 
-    logging.debug("Completed fetching the SNMP table data.")
-    return table
-
-
-# Rest of your snmp_main function remains the same
+    logging.debug("Completed fetching the SNMP table data and writing to CSV.")
 
 
 def snmp_main():
-    # 示例配置，根据实际情况调整
     ip = '10.170.69.101'
     port = 161
     user = 'clypgac'
@@ -68,17 +63,15 @@ def snmp_main():
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
-    max_cols = 18  # 假定的列数
+    max_cols = 18  # Number of columns in the table
 
-    table_data = fetch_table(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols)
-
-    # 保存到CSV
     with open('snmp_table_data.csv', 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
-        for row in table_data:
-            csvwriter.writerow(row)
+        # 直接在获取数据的函数中写入CSV，每获取到一行数据后立即写入
+        fetch_table_and_write_to_csv(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
+                                     csvwriter)
 
-    logging.info("Table data fetched and saved to snmp_table_data.csv")
+    logging.info("Table data fetching and CSV writing completed.")
 
 
 if __name__ == "__main__":
