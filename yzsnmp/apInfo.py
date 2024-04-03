@@ -39,7 +39,8 @@ def fetch_table(ip, port, user, authKey, privKey, authProtocol, privProtocol, ba
     # Transpose the table to get rows instead of columns
     return list(map(list, zip(*table)))
 
-def snmpmain():
+
+def snmp_main():
     ip = '10.170.69.101'
     port = 161
     user = 'clypgac'
@@ -60,5 +61,6 @@ def snmpmain():
 
     logging.info("Table data fetched and saved to snmp_table_data.csv")
 
+
 if __name__ == "__main__":
-    snmpmain()
+    snmp_main()
