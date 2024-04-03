@@ -2,7 +2,6 @@ from pysnmp.hlapi import *
 import csv
 import logging
 
-# 配置日志
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
 
@@ -12,18 +11,24 @@ def fetch_table(ip, port, user, authKey, privKey, authProtocol, privProtocol, ba
     target = UdpTransportTarget((ip, port))
     context = ContextData()
 
+    logging.debug("Starting to fetch the SNMP table data...")
+
     table = []
+    # Iterate over each column in the table
     for col_index in range(1, max_cols + 1):
         col_oid = f"{base_oid}.{col_index}"
+        logging.debug("Fetching column: %s", col_oid)
         col = []
-        for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(
-                engine,
-                user_data,
-                target,
-                context,
-                ObjectType(ObjectIdentity(col_oid)),
-                lexicographicMode=False
-        ):
+        last_oid = ObjectIdentity(col_oid)
+
+        while True:
+            logging.debug("Fetching next entry for OID: %s", last_oid)
+            errorIndication, errorStatus, errorIndex, varBinds = next(
+                nextCmd(engine, user_data, target, context,
+                        ObjectType(last_oid),
+                        lexicographicMode=False)
+            )
+
             if errorIndication:
                 logging.error("Error: %s", errorIndication)
                 break
@@ -34,26 +39,29 @@ def fetch_table(ip, port, user, authKey, privKey, authProtocol, privProtocol, ba
             else:
                 for varBind in varBinds:
                     oid, value = varBind
-                    if str(oid).startswith(base_oid):
+                    if str(oid).startswith(col_oid):
+                        logging.debug("Found value: %s for OID: %s", value.prettyPrint(), oid.prettyPrint())
                         col.append(value.prettyPrint())
+                        last_oid = oid
                     else:
+                        logging.debug("OID: %s is outside of the column: %s", oid.prettyPrint(), col_oid)
                         break
-                if not str(oid).startswith(base_oid):
+                if not str(oid).startswith(col_oid):
+                    # This means we've moved past the current column
+                    logging.debug("Completed fetching for column: %s", col_oid)
                     break
-        table.append(col)
-        # 记录处理完的一列（对应表的一行）
-        logging.debug("Processed column OID: %s with values: %s", col_oid, ', '.join(col))
 
-    # 转置表格以按行组织数据，并记录每行数据
+        table.append(col)
+
+    # Transpose the table to get rows instead of columns
     transposed_table = list(map(list, zip(*table))) if table else []
-    for row_index, row in enumerate(transposed_table, start=1):
-        logging.debug("Processed row %d: %s", row_index, ', '.join(row))
+    logging.debug("Completed fetching the SNMP table data.")
 
     return transposed_table
 
 
 def snmp_main():
-    # 这里替换为你的实际配置
+    # 示例配置，根据实际情况调整
     ip = '10.170.69.101'
     port = 161
     user = 'clypgac'
