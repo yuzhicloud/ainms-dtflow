@@ -2,84 +2,63 @@ from pysnmp.hlapi import *
 import csv
 import logging
 
-# 设置日志
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
-
-def fetch_and_write_table_data(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
-                               csvfile_path):
+def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
+                                csv_writer):
     engine = SnmpEngine()
     user_data = UsmUserData(user, authKey, privKey, authProtocol=authProtocol, privProtocol=privProtocol)
     target = UdpTransportTarget((ip, port))
     context = ContextData()
 
-    with open(csvfile_path, 'w', newline='', encoding='utf-8') as csvfile:
-        csv_writer = csv.writer(csvfile, lineterminator='\n')
+    # 存储整个表的数据，key为列号，value为该列的所有数据
+    table_data = {}
 
-        # 获取所有索引
-        indexes = set()
-        logging.debug("Attempting to retrieve indexes using the base OID.")
-        iterator = nextCmd(engine, user_data, target, context,
-                           ObjectType(ObjectIdentity(base_oid + '.1')),  # 假设索引在'.1'之后开始
+    for col_index in range(1, max_cols + 1):
+        col_oid = f"{base_oid}.{col_index}"
+        col_data = []
+
+        iterator = nextCmd(engine, user_data, target, context, ObjectType(ObjectIdentity(col_oid)),
                            lexicographicMode=False)
 
         while True:
             try:
                 errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+
                 if errorIndication:
                     logging.error("Error: %s", errorIndication)
                     break
                 elif errorStatus:
-                    logging.error("Error at %s: %s",
-                                  errorIndex and varBinds[int(errorIndex) - 1][0] or '?',
-                                  errorStatus.prettyPrint())
+                    logging.error("Error: %s at %s", errorStatus.prettyPrint(),
+                                  errorIndex and varBinds[int(errorIndex) - 1][0] or '?')
                     break
                 else:
-                    if not varBinds:
-                        logging.debug("No more data available for the base OID.")
-                        break
                     for varBind in varBinds:
                         oid, value = varBind
-                        logging.debug("Retrieved OID %s with value %s", oid.prettyPrint(), value.prettyPrint())
-                        # 处理OID和值，提取索引等
-                        index = '.'.join(oid.prettyPrint().split('.')[-max_cols:])
-                        indexes.add(index)
+                        if str(oid).startswith(col_oid):
+                            col_data.append(value.prettyPrint())
+                        else:
+                            break
+                    if not str(oid).startswith(col_oid):
+                        break
             except StopIteration:
-                logging.debug("Completed iterating through the OID.")
                 break
 
-        logging.debug("Indexes found: %s", list(indexes))
+        table_data[col_index] = col_data
 
-        # 对于每个索引，获取所有列的数据
-        for index in sorted(indexes):
-            row = []
-            for col_index in range(1, max_cols + 1):
-                column_oid = f"{base_oid}.{col_index}.{index}"
-                errorIndication, errorStatus, errorIndex, varBinds = next(
-                    getCmd(engine, user_data, target, context,
-                           ObjectType(ObjectIdentity(column_oid))))
+    # 确定最大行数
+    max_rows = max(len(col) for col in table_data.values())
 
-                if errorIndication:
-                    logging.error("Error fetching OID %s: %s", column_oid, errorIndication)
-                    row.append('')
-                elif errorStatus:
-                    logging.error("Error fetching OID %s: %s", column_oid, errorStatus.prettyPrint())
-                    row.append('')
-                else:
-                    for varBind in varBinds:
-                        _, value = varBind
-                        value_str = value.prettyPrint()
-                        row.append(value_str)
-                        logging.debug("Successfully fetched OID %s: Value: %s", oid.prettyPrint(), value_str)
-
-            # 将获取的行数据写入CSV
-            csv_writer.writerow(row)
-            logging.debug("Wrote data for index %s to CSV: %s", index, row)
-
-        logging.info("Completed fetching SNMP table data and writing to CSV.")
+    # 按行写入CSV
+    for row_index in range(max_rows):
+        row = [table_data[col_index][row_index] if row_index < len(table_data[col_index]) else '' for col_index in
+               range(1, max_cols + 1)]
+        csv_writer.writerow(row)
 
 
 def snmp_main():
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
+
+    # 以下配置需要根据你的实际情况进行修改
     ip = '10.170.69.101'
     port = 161
     user = 'clypgac'
@@ -88,11 +67,14 @@ def snmp_main():
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
-    max_cols = 18
-    csvfile_path = 'snmp_table_data.csv'
+    max_cols = 18  # Number of columns in the table
 
-    fetch_and_write_table_data(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
-                               csvfile_path)
+    with open('snmp_table_data.csv', 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
+                                    csv_writer)
+
+    logging.info("Table data fetching and CSV writing completed.")
 
 
 if __name__ == "__main__":
