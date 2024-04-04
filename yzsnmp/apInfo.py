@@ -17,19 +17,21 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
         col_oid = f"{base_oid}.{col_index}"
         col_data = []
 
-        iterator = nextCmd(engine, user_data, target, context, ObjectType(ObjectIdentity(col_oid)),
+        iterator = nextCmd(engine,
+                           user_data,
+                           target,
+                           context,
+                           ObjectType(ObjectIdentity(col_oid)),
                            lexicographicMode=False)
-
         while True:
             try:
                 errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
-
                 if errorIndication:
                     logging.error("Error: %s", errorIndication)
                     break
                 elif errorStatus:
                     logging.error("Error: %s at %s", errorStatus.prettyPrint(),
-                                  errorIndex and varBinds[int(errorIndex) - 1][0] or '?')
+                                  varBinds[int(errorIndex) - 1][0] if errorIndex else '?')
                     break
                 else:
                     for varBind in varBinds:
@@ -37,11 +39,14 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                         if str(oid).startswith(col_oid):
                             col_data.append(value.prettyPrint())
                         else:
+                            # 如果当前OID不是该列的一部分，跳出循环
                             break
+                    # 如果已处理完所有数据，结束当前列的数据收集
                     if not str(oid).startswith(col_oid):
                         break
             except StopIteration:
                 break
+
 
         table_data[col_index] = col_data
 
