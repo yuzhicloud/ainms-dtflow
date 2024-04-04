@@ -2,7 +2,6 @@ from pysnmp.hlapi import *
 import csv
 import logging
 
-
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                 csv_writer):
     engine = SnmpEngine()
@@ -10,54 +9,52 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
     target = UdpTransportTarget((ip, port))
     context = ContextData()
 
-    # 存储整个表的数据，key为列号，value为该列的所有数据
     table_data = {}
 
+    logging.debug("Starting to fetch SNMP table data.")
     for col_index in range(1, max_cols + 1):
         col_oid = f"{base_oid}.{col_index}"
+        logging.debug("Fetching data for column OID: %s", col_oid)
         col_data = []
 
-        iterator = nextCmd(engine,
-                           user_data,
-                           target,
-                           context,
-                           ObjectType(ObjectIdentity(col_oid)),
-                           lexicographicMode=False)
+        iterator = nextCmd(engine, user_data, target, context, ObjectType(ObjectIdentity(col_oid)), lexicographicMode=False)
+
         while True:
             try:
                 errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+
                 if errorIndication:
                     logging.error("Error: %s", errorIndication)
                     break
                 elif errorStatus:
-                    logging.error("Error: %s at %s", errorStatus.prettyPrint(),
-                                  varBinds[int(errorIndex) - 1][0] if errorIndex else '?')
+                    logging.error("Error: %s at %s", errorStatus.prettyPrint(), varBinds[int(errorIndex) - 1][0] if errorIndex else '?')
                     break
                 else:
                     for varBind in varBinds:
                         oid, value = varBind
                         if str(oid).startswith(col_oid):
                             col_data.append(value.prettyPrint())
+                            logging.debug("Fetched value %s for OID %s", value.prettyPrint(), oid)
                         else:
-                            # 如果当前OID不是该列的一部分，跳出循环
+                            logging.debug("Reached the end of column OID: %s", col_oid)
                             break
-                    # 如果已处理完所有数据，结束当前列的数据收集
                     if not str(oid).startswith(col_oid):
                         break
             except StopIteration:
+                logging.debug("Completed fetching data for column OID: %s", col_oid)
                 break
-
 
         table_data[col_index] = col_data
 
-    # 确定最大行数
+    logging.debug("Completed fetching table data. Now writing to CSV.")
     max_rows = max(len(col) for col in table_data.values())
 
-    # 按行写入CSV
     for row_index in range(max_rows):
-        row = [table_data[col_index][row_index] if row_index < len(table_data[col_index]) else '' for col_index in
-               range(1, max_cols + 1)]
+        row = [table_data[col_index][row_index] if row_index < len(table_data[col_index]) else '' for col_index in range(1, max_cols + 1)]
         csv_writer.writerow(row)
+        logging.debug("Wrote row %d to CSV", row_index + 1)
+
+    logging.info("Table data fetching and CSV writing completed.")
 
 
 def snmp_main():
