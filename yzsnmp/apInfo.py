@@ -2,6 +2,21 @@ from pysnmp.hlapi import *
 import csv
 import logging
 
+
+def convert_hex_to_chinese(hex_string):
+    """
+    将十六进制形式的字符串转换为中文字符串。
+    """
+    # 移除可能的十六进制前缀"0x"，并将每两个十六进制字符转换为字节
+    bytes_obj = bytes.fromhex(hex_string.replace("0x", ""))
+    try:
+        # 尝试使用utf-8编码解码字节对象
+        return bytes_obj.decode('utf-8')
+    except UnicodeDecodeError:
+        # 如果解码失败，返回原始的十六进制字符串
+        return hex_string
+
+
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                 csv_writer):
     engine = SnmpEngine()
@@ -33,8 +48,15 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                     for varBind in varBinds:
                         oid, value = varBind
                         if str(oid).startswith(col_oid):
-                            col_data.append(value.prettyPrint())
-                            logging.debug("Fetched value %s for OID %s", value.prettyPrint(), oid)
+                            # 检查是否为特定的需要转换的OID
+                            if str(oid).endswith('1.5'):  # 假设需要转换的OID以'.1.5'结尾
+                                # 对值进行十六进制到中文的转换
+                                converted_value = convert_hex_to_chinese(value.prettyPrint())
+                                col_data.append(converted_value)
+                                logging.debug("Fetched and converted value %s for OID %s", converted_value, oid)
+                            else:
+                                col_data.append(value.prettyPrint())
+                                logging.debug("Fetched value %s for OID %s", value.prettyPrint(), oid)
                         else:
                             logging.debug("Reached the end of column OID: %s", col_oid)
                             break
@@ -70,13 +92,26 @@ def snmp_main():
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
     max_cols = 18  # Number of columns in the table
 
+    # 定义列标题
+    column_titles = ['hwWlanApMac', 'hwWlanApSn', 'hwWlanApTypeInfo', 'hwWlanApName', 'hwWlanApGroup',
+                     'hwWlanApRunState', 'hwWlanApSoftwareVersion', 'hwWlanApHardwareVersion', 'hwWlanApCpuType',
+                     'hwWlanApCpufrequency', 'hwWlanApMemoryType', 'hwWlanApDomain', 'hwWlanApIpAddress',
+                     'hwWlanApIpNetMask', 'hwWlanApGatewayIp', 'hwWlanApMemorySize', 'hwWlanApFlashSize',
+                     'hwWlanApRunTime']
+
     for ip in ips:
         csv_filename = f'snmp_table_data_{ip.replace(".", "_")}.csv'
         with open(csv_filename, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
+            # 写入列标题
+            csv_writer.writerow(column_titles)
+
             logging.info(f"Fetching data for IP: {ip}")
-            fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csv_writer)
+            fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid,
+                                        max_cols, csv_writer)
+
         logging.info(f"Table data fetching and CSV writing completed for IP: {ip}.")
+
 
 if __name__ == "__main__":
     snmp_main()
