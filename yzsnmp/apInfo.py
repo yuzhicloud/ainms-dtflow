@@ -58,7 +58,9 @@ def fetch_and_write_table_data(ip, port, user, authKey, privKey, authProtocol, p
                 else:
                     for varBind in varBinds:
                         _, value = varBind
-                        row.append(value.prettyPrint())
+                        value_str = value.prettyPrint()
+                        row.append(value_str)
+                        logging.debug("Successfully fetched OID %s: Value: %s", oid.prettyPrint(), value_str)
 
             # 将获取的行数据写入CSV
             csv_writer.writerow(row)
