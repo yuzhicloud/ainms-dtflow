@@ -19,24 +19,34 @@ def fetch_and_write_table_data(ip, port, user, authKey, privKey, authProtocol, p
         # 获取所有索引
         indexes = set()
         logging.debug("Attempting to retrieve indexes using the base OID.")
-        for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(
-                engine, user_data, target, context,
-                ObjectType(ObjectIdentity(base_oid)),
-                lexicographicMode=False):
+        iterator = nextCmd(engine, user_data, target, context,
+                           ObjectType(ObjectIdentity(base_oid + '.1')),  # 假设索引在'.1'之后开始
+                           lexicographicMode=False)
 
-            if errorIndication:
-                logging.error("Error: %s", errorIndication)
-                return
-            elif errorStatus:
-                logging.error("Error: %s at %s", errorStatus.prettyPrint(),
-                              errorIndex and varBinds[int(errorIndex) - 1][0] or '?')
-                return
-            else:
-                for varBind in varBinds:
-                    oid, _ = varBind
-                    # Assuming the last digit in OID is the index
-                    index = '.'.join(oid.prettyPrint().split('.')[-max_cols:])
-                    indexes.add(index)
+        while True:
+            try:
+                errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+                if errorIndication:
+                    logging.error("Error: %s", errorIndication)
+                    break
+                elif errorStatus:
+                    logging.error("Error at %s: %s",
+                                  errorIndex and varBinds[int(errorIndex) - 1][0] or '?',
+                                  errorStatus.prettyPrint())
+                    break
+                else:
+                    if not varBinds:
+                        logging.debug("No more data available for the base OID.")
+                        break
+                    for varBind in varBinds:
+                        oid, value = varBind
+                        logging.debug("Retrieved OID %s with value %s", oid.prettyPrint(), value.prettyPrint())
+                        # 处理OID和值，提取索引等
+                        index = '.'.join(oid.prettyPrint().split('.')[-max_cols:])
+                        indexes.add(index)
+            except StopIteration:
+                logging.debug("Completed iterating through the OID.")
+                break
 
         logging.debug("Indexes found: %s", list(indexes))
 
