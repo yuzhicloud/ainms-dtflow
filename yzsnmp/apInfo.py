@@ -99,8 +99,10 @@ def snmp_main():
                      'hwWlanApIpNetMask', 'hwWlanApGatewayIp', 'hwWlanApMemorySize', 'hwWlanApFlashSize',
                      'hwWlanApRunTime']
 
+    csv_files = []
     for ip in ips:
         csv_filename = f'snmp_table_data_{ip.replace(".", "_")}.csv'
+        csv_files.append(csv_filename)
         with open(csv_filename, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             # 写入列标题
@@ -112,7 +114,26 @@ def snmp_main():
 
         logging.info(f"Table data fetching and CSV writing completed for IP: {ip}.")
 
+    # 合并CSV文件
+    all_data_filename = 'snmp_alldata.csv'
+    with open(all_data_filename, 'w', newline='') as outfile:
+        writer = csv.writer(outfile)
+        for i, fname in enumerate(csv_files):
+            with open(fname, 'r', newline='') as infile:
+                reader = csv.reader(infile)
+                if i == 0:
+                    # 从第一个文件写入头部
+                    writer.writerow(next(reader))
+                else:
+                    # 跳过其他文件的头部
+                    next(reader)
+                # 写入数据行
+                writer.writerows(reader)
+
+    logging.info("All CSV files have been merged into snmp_alldata.csv.")
+    return all_data_filename
+
 
 if __name__ == "__main__":
-    snmp_main()
-
+    combined_csv_filename = snmp_main()
+    print(f"Combined CSV file: {combined_csv_filename}")
