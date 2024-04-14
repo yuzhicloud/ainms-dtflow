@@ -81,7 +81,7 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                             break
 
                 record_count += 1
-                if record_count >= 100:
+                if record_count >= 1000:
                     logging.info(f"Reached 100 records for IP: {ip}, exiting fetch.")
                     break
 
@@ -89,7 +89,7 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                 logging.debug(f"Completed fetching data for column OID: {col_oid}")
                 break
 
-            if record_count >= 100:
+            if record_count >= 1000:
                 break
 
     logging.info(f"Table data fetching completed for IP: {ip}. Now writing to CSV.")
