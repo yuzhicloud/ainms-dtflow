@@ -1,15 +1,21 @@
-from yzsnmp.apInfo import snmp_main
+from yzsnmp.apinfo import snmp_main
 from yzsql import csvToDatabase
 
 
+
 def main():
-    # 调用snmp_main函数，并接收返回的CSV文件名
-    csv_file_name = snmp_main()
-    print(f"Generated CSV file: {csv_file_name}")
+    ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
+    # 如果没有csvfiles目录，则创建
+    csv_dir = os.path.join('.', 'csvfiles')
+    if not os.path.exists(csv_dir):
+        os.makedirs(csv_dir)  # 创建目录
 
-    # 使用这个CSV文件名作为参数，调用csvToDatabase函数进行数据处理
-    # csvToDatabase(csv_file_name)
+    # snmp_main,通过snmp协议获取AC数据，并保存到csv文件
+    snmp_csv_files = snmp_main(ips)
+    print("Generated CSV files:", csv_files)
 
+    # csvToCn,把csv文件里面的16进制转成中文
+    hex_to_chinese(snmp_csv_files);
 
 if __name__ == "__main__":
     main()

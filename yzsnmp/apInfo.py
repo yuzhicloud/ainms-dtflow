@@ -1,20 +1,15 @@
 from pysnmp.hlapi import *
 import csv
 import logging
+from threading import Thread
 
 
-def convert_hex_to_chinese(hex_string):
-    """
-    将十六进制形式的字符串转换为中文字符串。
-    """
-    # 移除可能的十六进制前缀"0x"，并将每两个十六进制字符转换为字节
-    bytes_obj = bytes.fromhex(hex_string.replace("0x", ""))
-    try:
-        # 尝试使用utf-8编码解码字节对象
-        return bytes_obj.decode('utf-8')
-    except UnicodeDecodeError:
-        # 如果解码失败，返回原始的十六进制字符串
-        return hex_string
+def generate_csv_filename(ip):
+    # 将IP中的点替换为下划线
+    filename = f"snmp_table_data_{ip.replace('.', '_')}.csv"
+    # 构建文件完整路径，假设apinfo.py在/yzsnmp目录下，需要回到上级目录然后进入/csvfiles
+    full_path = os.path.join('..', 'csvfiles', filename)
+    return full_path
 
 
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
@@ -78,8 +73,18 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
 
     logging.info("Table data fetching and CSV writing completed.")
 
+#多线程工作
+def thread_function(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csv_filename, column_titles):
+    with open(csv_filename, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        # 写入列标题
+        csv_writer.writerow(column_titles)
+        logging.info(f"Fetching data for IP: {ip}")
+        fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csv_writer)
+        logging.info(f"Table data fetching and CSV writing completed for IP: {ip}.")
 
-def snmp_main():
+
+def snmp_main(ips):
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
     ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
@@ -98,42 +103,18 @@ def snmp_main():
                      'hwWlanApCpufrequency', 'hwWlanApMemoryType', 'hwWlanApDomain', 'hwWlanApIpAddress',
                      'hwWlanApIpNetMask', 'hwWlanApGatewayIp', 'hwWlanApMemorySize', 'hwWlanApFlashSize',
                      'hwWlanApRunTime']
-
-    csv_files = []
+    threads = []
+    snm_csv_files = []
     for ip in ips:
-        csv_filename = f'snmp_table_data_{ip.replace(".", "_")}.csv'
-        csv_files.append(csv_filename)
-        with open(csv_filename, 'w', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            # 写入列标题
-            csv_writer.writerow(column_titles)
+        #snmp_table_data_10_170_69_101.csv
+        csv_filename = generate_csv_filename(ip)
+        snmp_csv_files.append(csv_filename)
+        thread = Thread(target=thread_function, args=(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csv_filename, column_titles))
+        threads.append(thread)
+        thread.start()
 
-            logging.info(f"Fetching data for IP: {ip}")
-            fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid,
-                                        max_cols, csv_writer)
+    for thread in threads:
+        thread.join()
 
-        logging.info(f"Table data fetching and CSV writing completed for IP: {ip}.")
+    return snmp_csv_files
 
-    # 合并CSV文件
-    all_data_filename = 'snmp_alldata.csv'
-    with open(all_data_filename, 'w', newline='') as outfile:
-        writer = csv.writer(outfile)
-        for i, fname in enumerate(csv_files):
-            with open(fname, 'r', newline='') as infile:
-                reader = csv.reader(infile)
-                if i == 0:
-                    # 从第一个文件写入头部
-                    writer.writerow(next(reader))
-                else:
-                    # 跳过其他文件的头部
-                    next(reader)
-                # 写入数据行
-                writer.writerows(reader)
-
-    logging.info("All CSV files have been merged into snmp_alldata.csv.")
-    return all_data_filename
-
-
-if __name__ == "__main__":
-    combined_csv_filename = snmp_main()
-    print(f"Combined CSV file: {combined_csv_filename}")
