@@ -69,6 +69,14 @@ def process_ap_name_multithreaded(snmp_csv_files, csv_dir):
         if dfs_list:
             with dfs_lock:
                 final_df = pd.concat(dfs_list, ignore_index=True)
+                # Append a default entry to the DataFrame before saving
+                default_entry = pd.DataFrame([{
+                    'id': 404,
+                    'name': '默认AP组',
+                    'controller_id': None,
+                    'power_plant_id': None
+                }])
+                final_df = pd.concat([final_df, default_entry], ignore_index=True)
                 final_file_path = os.path.join(csv_dir, 'allAPG.csv')
                 final_df.to_csv(final_file_path, index=False)
                 return final_file_path  # Return the path to the CSV file instead of the DataFrame

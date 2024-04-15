@@ -130,7 +130,7 @@ def snmp_main(ips):
     threads = []
     snmp_csv_files = []
     for ip in ips:
-        # snmp_table_data_10_170_69_101.csv
+        # snmp_table_data_10_170_69_100.csv
         csv_filename = generate_csv_filename(ip)
         snmp_csv_files.append(csv_filename)
         thread = Thread(target=thread_function, args=(

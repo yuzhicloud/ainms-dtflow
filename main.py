@@ -1,6 +1,6 @@
 import os
 import logging
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import yzsnmp
 import shutil
 import yzdb
@@ -8,6 +8,7 @@ from yzdb import process_ap_name_multithreaded, aptodb, apgtodb
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 # Define the clear_directory function to accept a path to clear
 def clear_directory(csv_dir):
@@ -45,6 +46,17 @@ def create_db_engine(db_config):
         raise SystemExit(e)  # Exit if cannot connect to database
 
 
+def truncate_table(engine, table_name):
+    try:
+        with engine.begin() as conn:  # 使用事务确保操作的完整性
+            conn.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
+            conn.execute(text(f"TRUNCATE TABLE {table_name}"))
+            conn.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
+            logging.info(f"Table {table_name} has been truncated successfully.")
+    except Exception as e:
+        logging.error(f"Failed to truncate table {table_name}: {e}")
+
+
 def main():
     csv_dir = 'csvfiles'  # Relative path to csvfiles directory
     # # Print current working directory and Python sys.path for debugging
@@ -58,21 +70,25 @@ def main():
     # snmp_csv_files = yzsnmp.snmp_main(ips)
     # logging.debug("Processed files:", snmp_csv_files)
 
-    snmp_csv_files = ['snmp_table_data_10_170_69_101.csv',
-                      'snmp_table_data_10_170_69_104.csv',
-                      'snmp_table_data_10_170_69_107.csv',
-                      'snmp_table_data_10_170_69_110.csv']
+    snmp_csv_files = ['snmp_table_data_10_170_69_100.csv',
+                      'snmp_table_data_10_170_69_103.csv',
+                      'snmp_table_data_10_170_69_106.csv',
+                      'snmp_table_data_10_170_69_109.csv']
 
     allapg_file_path = process_ap_name_multithreaded(snmp_csv_files, csv_dir)
     logging.debug("allAPG file path: %s", allapg_file_path)
 
     engine = create_db_engine(db_config)
     logging.debug(" Engine created successfully.")
-    csv_file_path = allapg_file_path
     apg_table_name = 'access_point_group'
     ap_table_name = 'access_point'
-    apgtodb.load_data_to_database(engine, csv_file_path, apg_table_name)
-    aptodb.ap_db_operation(engine, csv_dir, csv_file_path, snmp_csv_files, ap_table_name)
+
+    # 首先清空access_point_group表和access_point表
+    truncate_table(engine, 'access_point')
+    truncate_table(engine, 'access_point_group')
+
+    apgtodb.load_data_to_database(engine, allapg_file_path, apg_table_name)
+    aptodb.ap_db_operation(engine, csv_dir, allapg_file_path, snmp_csv_files, ap_table_name)
 
     logging.info("Data loaded to database successfully.")
     logging.info("Script execution complete.")
