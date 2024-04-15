@@ -45,10 +45,10 @@ def process_ap_name_multithreaded(snmp_csv_files, csv_dir):
         logging.debug("File loaded successfully.")
         powerplant_dict = pd.Series(powerplant_df.id.values, index=powerplant_df.power_plant_name).to_dict()
         file_controller_id_map = {
-            'snmp_table_data_10_170_69_100.csv': 1500,
-            'snmp_table_data_10_170_69_103.csv': 1501,
-            'snmp_table_data_10_170_69_106.csv': 1502,
-            'snmp_table_data_10_170_69_109.csv': 1503
+            'snmp_table_data_10_170_69_101.csv': 1500,
+            'snmp_table_data_10_170_69_104.csv': 1501,
+            'snmp_table_data_10_170_69_107.csv': 1502,
+            'snmp_table_data_10_170_69_110.csv': 1503
         }
         threads = []
         dfs_list = []
