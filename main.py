@@ -54,7 +54,7 @@ def main():
     # logging.info("CSV directory cleared.")
     #
     # # Call the SNMP main function and get the list of processed CSV files
-    # ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
+    # ips = ['10.170.69.100', '10.170.69.103', '10.170.69.106', '10.170.69.109']
     # snmp_csv_files = yzsnmp.snmp_main(ips)
     # logging.debug("Processed files:", snmp_csv_files)
 

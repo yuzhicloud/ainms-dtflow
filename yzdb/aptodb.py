@@ -8,7 +8,6 @@ def ap_db_operation(engine, csv_dir, allAPG_file_path, snmp_csv_files, table_nam
 
     # 读取映射数据
     try:
-        # group_df = pd.read_csv('./csvfiles/allAPG.csv')
         group_df = pd.read_csv(allAPG_file_path)
         # 直接使用name字段的完整内容作为键创建映射字典
         group_mapping = pd.Series(group_df.id.values, index=group_df.name).to_dict()

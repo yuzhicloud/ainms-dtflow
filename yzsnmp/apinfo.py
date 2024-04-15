@@ -50,7 +50,6 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
         col_oid = f"{base_oid}.{col_index}"
         logging.debug(f"Fetching data for column OID: {col_oid}")
         iterator = nextCmd(engine, user_data, target, context, ObjectType(ObjectIdentity(col_oid)), lexicographicMode=False)
-        record_count = 0
 
         while True:
             try:
@@ -80,17 +79,8 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                         else:
                             logging.debug(f"Reached the end of column OID: {col_oid}")
                             break
-
-                record_count += 1
-                if record_count >= 1000:
-                    logging.info(f"Reached 100 records for IP: {ip}, exiting fetch.")
-                    break
-
             except StopIteration:
                 logging.debug(f"Completed fetching data for column OID: {col_oid}")
-                break
-
-            if record_count >= 1000:
                 break
 
     logging.info(f"Table data fetching completed for IP: {ip}. Now writing to CSV.")
@@ -119,7 +109,6 @@ def thread_function(ip, port, user, authKey, privKey, authProtocol, privProtocol
 def snmp_main(ips):
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
-    ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
     port = 161
     user = 'clypgac'
     authKey = 'longyuandianli@123'
@@ -127,7 +116,7 @@ def snmp_main(ips):
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
-    max_cols = 18  # Number of columns in the table
+    max_cols = 8  # Number of columns in the table
 
     # 定义列标题
     # column_titles = ['hwWlanApMac', 'hwWlanApSn', 'hwWlanApTypeInfo', 'hwWlanApName', 'hwWlanApGroup',
