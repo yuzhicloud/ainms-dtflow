@@ -76,6 +76,7 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                                 table_data[row_index][col_index - 1] = decoded_value
                             else:
                                 table_data[row_index][col_index - 1] = value.prettyPrint()
+                            logging.debug("Fetched value %s for OID %s", value.prettyPrint(), oid)
                         else:
                             logging.debug(f"Reached the end of column OID: {col_oid}")
                             break
