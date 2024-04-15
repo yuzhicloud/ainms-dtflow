@@ -1,57 +1,89 @@
+import logging
+import os
+
 import pandas as pd
 import numpy as np
-from sqlalchemy import create_engine, exc
 import logging
 
-
-def preprocess_data(df, group_mapping):
-    # 保留所需字段并重命名列以符合数据库表结构
-    df = df[['hwWlanApSn', 'hwWlanApName', 'hwWlanApTypeInfo', 'hwWlanApRunState', 'hwWlanApSoftwareVersion']]
-    df.rename(columns={
-        'hwWlanApSn': 'neesn',
-        'hwWlanApName': 'nename',
-        'hwWlanApTypeInfo': 'netype',
-        'hwWlanApRunState': 'nestate',
-        'hwWlanApSoftwareVersion': 'version',
-    }, inplace=True)
-
-    # 映射 group_id
-    df['group_id'] = df['nename'].map(group_mapping).fillna(404).astype(int)
-    df['neesn'].replace({np.nan: "unknown"}, inplace=True)  # Replace NaN with "unknown" or another placeholder
-    return df
+# Set up logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def load_group_mapping(allAPG_file_path):
-    group_df = pd.read_csv(allAPG_file_path)
-    return pd.Series(group_df.id.values, index=group_df.name).to_dict()
+def create_csv(csv_dir, allapg_file_path, snmp_csv_files):
+    # Load apg.csv
+    apg_df = pd.read_csv(allapg_file_path)
+    logging.debug("Loaded apg.csv")
+
+    output_files = []  # 初始化存储生成的文件名列表
+    for snmp_file_name in snmp_csv_files:
+        snmp_file_path = os.path.join(csv_dir, snmp_file_name)  # Ensure the path is correctly constructed
+        logging.debug(f"Processing file: {snmp_file_path}")
+
+        # Load each snmp.csv file
+        snmp_df = pd.read_csv(snmp_file_path)
+        logging.debug(f"Loaded {snmp_file_path}")
+
+        # Create a new 'group_id' column in snmp_df, initialize with default 404
+        snmp_df['group_id'] = 404
+
+        # Iterate over apg_df to find matches and update 'group_id'
+        for index, apg_row in apg_df.iterrows():
+            # Find rows in snmp_df where 'hwWlanApGroup' contains the 'name' from apg_df
+            mask = snmp_df['hwWlanApGroup'].str.contains(apg_row['name'], na=False)
+            matched_count = snmp_df.loc[mask].shape[0]
+            if matched_count > 0:
+                logging.debug(f"Found {matched_count} matches for {apg_row['name']}")
+            snmp_df.loc[mask, 'group_id'] = apg_row['id']
+
+        # Replace NaN with None for proper NULL handling in SQL
+        snmp_df = snmp_df.where(pd.notnull(snmp_df), None)
+
+        # Construct output filename
+        output_filename = os.path.join(csv_dir, snmp_file_name.replace('.csv', '_db.csv'))
+        logging.debug(f"Saving to {output_filename}")
+        # Save the updated DataFrame to a new CSV file
+        snmp_df.to_csv(output_filename, index=False)
+        logging.info(f"File saved: {output_filename}")
+
+        output_files.append(output_filename)
+
+    return output_files
 
 
-def ap_db_operation(engine, csv_dir, allAPG_file_path, snmp_csv_files, table_name):
-    logging.info("开始数据处理...")
+def insert_csv_data_to_db(engine, csv_files, table_name, if_exists='append', index=False):
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    # 加载 group mapping
-    group_mapping = load_group_mapping(allAPG_file_path)
+    for csv_file in csv_files:
+        logging.debug(f"Loading data from {csv_file}")
 
-    for file_name in snmp_csv_files:
-        file_path = f"{csv_dir}/{file_name}"
-        df = pd.read_csv(file_path)
-        df = preprocess_data(df, group_mapping)
-        logging.info(f"处理文件 {file_name}.")
+        # 读取CSV文件
+        df = pd.read_csv(csv_file)
 
-        # 尝试逐条插入数据
-        successful_count = 0
-        for index, row in df.iterrows():
-            try:
-                # 将单条记录转换为 DataFrame 并插入数据库
-                single_row_df = pd.DataFrame([row])
-                single_row_df.to_sql(name=table_name, con=engine, if_exists='append', index=False)
-                successful_count += 1
-            except exc.IntegrityError as e:
-                logging.error(f"插入失败 - 完整性错误，数据: {row.to_dict()}")
-            except Exception as e:
-                logging.error(f"插入失败 - 意外错误，数据: {row.to_dict()}")
+        # 重命名列以匹配数据库字段
+        df.rename(columns={
+            'hwWlanApMac': 'nemac',
+            'hwWlanApSn': 'neesn',
+            'hwWlanApTypeInfo': 'netype',
+            'hwWlanApName': 'nename',
+            'hwWlanApRunState': 'nestate',
+            'hwWlanApSoftwareVersion': 'version',
+            'group_id': 'group_id'  # 确保这个字段也正确映射
+        }, inplace=True)
 
-        logging.info(f"成功插入 {successful_count} 条记录到数据库。")
+        # 确保DataFrame包含数据库表的所有列，未提及的列设置为None
+        expected_columns = ['id', 'nedn', 'neid', 'aliasname', 'nename', 'necategory', 'netype',
+                            'nevendorname', 'neesn', 'neip', 'nemac', 'version', 'nestate',
+                            'createtime', 'neiptype', 'subnet', 'neosversion', 'group_id']
+        for col in expected_columns:
+            if col not in df.columns:
+                df[col] = None
 
-# 配置日志记录
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+        # 筛选出期望的列，防止因额外的列引起错误
+        df = df[expected_columns]
+
+        try:
+            # 插入数据到数据库表
+            df.to_sql(name=table_name, con=engine, if_exists=if_exists, index=index)
+            logging.info(f"Data from {csv_file} has been successfully loaded into the database table {table_name}.")
+        except Exception as e:
+            logging.error(f"Failed to load data from {csv_file} into database. Error: {e}")
