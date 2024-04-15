@@ -75,9 +75,8 @@ def main():
     #                   'snmp_table_data_10_170_69_107.csv',
     #                   'snmp_table_data_10_170_69_110.csv']
 
-    # allapg_file_path = process_ap_name_multithreaded(snmp_csv_files, csv_dir)
-    # logging.debug("allAPG file path: %s", allapg_file_path)
-    allapg_file_path = "csvfiles/allAPG.csv"
+    allapg_file_path = process_ap_name_multithreaded(snmp_csv_files, csv_dir)
+    logging.debug("allAPG file path: %s", allapg_file_path)
 
     engine = create_db_engine(db_config)
     logging.debug(" Engine created successfully.")
