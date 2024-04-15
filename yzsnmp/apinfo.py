@@ -129,11 +129,14 @@ def snmp_main(ips):
     max_cols = 18  # Number of columns in the table
 
     # 定义列标题
+    # column_titles = ['hwWlanApMac', 'hwWlanApSn', 'hwWlanApTypeInfo', 'hwWlanApName', 'hwWlanApGroup',
+    #                  'hwWlanApRunState', 'hwWlanApSoftwareVersion', 'hwWlanApHardwareVersion', 'hwWlanApCpuType',
+    #                  'hwWlanApCpufrequency', 'hwWlanApMemoryType', 'hwWlanApDomain', 'hwWlanApIpAddress',
+    #                  'hwWlanApIpNetMask', 'hwWlanApGatewayIp', 'hwWlanApMemorySize', 'hwWlanApFlashSize',
+    #                  'hwWlanApRunTime']
+
     column_titles = ['hwWlanApMac', 'hwWlanApSn', 'hwWlanApTypeInfo', 'hwWlanApName', 'hwWlanApGroup',
-                     'hwWlanApRunState', 'hwWlanApSoftwareVersion', 'hwWlanApHardwareVersion', 'hwWlanApCpuType',
-                     'hwWlanApCpufrequency', 'hwWlanApMemoryType', 'hwWlanApDomain', 'hwWlanApIpAddress',
-                     'hwWlanApIpNetMask', 'hwWlanApGatewayIp', 'hwWlanApMemorySize', 'hwWlanApFlashSize',
-                     'hwWlanApRunTime']
+                     'hwWlanApRunState', 'hwWlanApSoftwareVersion', 'hwWlanApHardwareVersion']
     threads = []
     snmp_csv_files = []
     for ip in ips:

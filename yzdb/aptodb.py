@@ -3,7 +3,7 @@ import pandas as pd
 import logging
 
 
-def ap_db_operation(engine, allAPG_file_path, table_name):
+def ap_db_operation(engine, csv_dir, allAPG_file_path, snmp_csv_files, table_name):
     logging.info("Starting the data processing script...")
 
     # 读取映射数据
@@ -18,8 +18,7 @@ def ap_db_operation(engine, allAPG_file_path, table_name):
         raise SystemExit(e)
 
     # 文件处理和数据插入
-    file_names = ['apg101.csv', 'apg104.csv', 'apg107.csv', 'apg110.csv']
-    csv_dir = './csvfiles'
+    file_names = snmp_csv_files
 
     for file_name in file_names:
         file_path = f"{csv_dir}/{file_name}"

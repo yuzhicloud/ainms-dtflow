@@ -72,7 +72,7 @@ def main():
     apg_table_name = 'access_point_group'
     ap_table_name = 'access_point'
     apgtodb.load_data_to_database(engine, csv_file_path, apg_table_name)
-    # aptodb.ap_db_operation(engine, csv_file_path, ap_table_name)
+    aptodb.ap_db_operation(engine, csv_dir, csv_file_path, snmp_csv_files, ap_table_name)
 
     logging.info("Data loaded to database successfully.")
     logging.info("Script execution complete.")
