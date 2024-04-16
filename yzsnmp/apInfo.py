@@ -61,7 +61,8 @@ def snmp_main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
     # 以下配置需要根据你的实际情况进行修改
-    ip = '10.170.69.101'
+    # ip = '10.170.69.101'
+    ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110'] 
     port = 161
     user = 'clypgac'
     authKey = 'longyuandianli@123'
@@ -71,9 +72,11 @@ def snmp_main():
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
     max_cols = 18  # Number of columns in the table
 
-    with open('snmp_table_data.csv', 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
+    for ip in ips:
+        filename = f'snmp_table_data_{ip}.csv'
+        with open('snmp_table_data.csv', 'w', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                     csv_writer)
 
     logging.info("Table data fetching and CSV writing completed.")
