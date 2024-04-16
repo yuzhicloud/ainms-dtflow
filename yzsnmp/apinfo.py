@@ -33,8 +33,6 @@ def hex_to_chinese(hex_str):
     except UnicodeDecodeError:
         return "Decoding failed"
 
-
-# Integrate the hex_to_chinese function within the fetch_data_and_write_by_row
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csv_writer):
     """
     Fetch SNMP data by row for the given IP and write to CSV.
@@ -72,9 +70,9 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                             # Decode hex string to Chinese if necessary
                             if col_oid.endswith('1.5'):
                                 decoded_value = hex_to_chinese(value.prettyPrint())
-                                table_data[row_index][col_index - 1] = decoded_value
+                                table_data[row_index][col_index - 1] = decoded_value if decoded_value != '' else None
                             else:
-                                table_data[row_index][col_index - 1] = value.prettyPrint()
+                                table_data[row_index][col_index - 1] = value.prettyPrint() if value.prettyPrint() != '' else None
                             logging.debug("Fetched value %s for OID %s", value.prettyPrint(), oid)
                         else:
                             logging.debug(f"Reached the end of column OID: {col_oid}")
@@ -83,16 +81,16 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                 logging.debug(f"Completed fetching data for column OID: {col_oid}")
                 break
 
-    logging.info(f"Table data fetching completed for IP: {ip}. Now writing to CSV.")
+        # Write the collected data to CSV
+        logging.debug(f"Number of rows ready to write for IP {ip}: {len(table_data)}")
+        for row_index, row_data in sorted(table_data.items()):
+            csv_writer.writerow(row_data)
+            logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}, Data: {row_data}")
 
-    # Write the collected data to CSV
-    logging.debug(f"Number of rows ready to write for IP {ip}: {len(table_data)}")
-    for row_index, row_data in sorted(table_data.items()):
-        csv_writer.writerow(row_data)
-        # logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}, Data: {row_data}")
+        # Clear the table data for the next column
+        table_data.clear()
 
     logging.info(f"CSV writing completed for IP: {ip}.")
-
 
 # 多线程工作
 def thread_function(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csv_filename,

@@ -99,7 +99,7 @@ def main():
     # Call the SNMP main function and get the list of processed CSV files
     ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
     snmp_csv_files = yzsnmp.snmp_main(ips)
-    logging.debug("Processed files:", snmp_csv_files)
+    logging.debug(f"Processed files: {snmp_csv_files}")
 
     # snmp_csv_files = ['snmp_table_data_10_170_69_101.csv',
     #                   'snmp_table_data_10_170_69_104.csv',
@@ -111,7 +111,7 @@ def main():
     #                   'snmp_table_data_10_170_69_109.csv']
 
     allapg_file_path = process_ap_name_multithreaded(snmp_csv_files, csv_dir)
-    logging.debug("allAPG file path: %s", allapg_file_path)
+    logging.debug(f"allAPG file path: {allapg_file_path}")
 
     engine = create_db_engine(db_config)
     logging.debug(" Engine created successfully.")

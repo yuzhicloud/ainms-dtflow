@@ -8,7 +8,7 @@ next_id = 1000
 id_lock = threading.Lock()
 
 
-def process_file(file_name, controller_id, powerplant_dict, csv_dir, dfs_list):
+def process_file(csv_dir,file_name, controller_id, powerplant_dict, dfs_list):
     global next_id
     file_path = os.path.join(csv_dir, file_name)
     logging.debug(f'Processing file: {file_path}')
@@ -31,7 +31,7 @@ def process_file(file_name, controller_id, powerplant_dict, csv_dir, dfs_list):
             dfs_list.append(new_df)
 
 
-def process_ap_name_multithreaded(snmp_csv_files, csv_dir):
+def process_ap_name_multithreaded(csv_dir, snmp_csv_files ):
     # 打印当前工作目录
     logging.debug("Current working directory:", os.getcwd())
     # 获取当前文件的目录路径
@@ -58,7 +58,7 @@ def process_ap_name_multithreaded(snmp_csv_files, csv_dir):
 
         logging.debug('Start processing files')
         for file_name, controller_id in file_controller_id_map.items():
-            thread = threading.Thread(target=process_file, args=(file_name, controller_id, powerplant_dict, csv_dir, dfs_list))
+            thread = threading.Thread(target=process_file, args=(csv_dir , file_name, controller_id, powerplant_dict, dfs_list))
             threads.append(thread)
             thread.start()
 
