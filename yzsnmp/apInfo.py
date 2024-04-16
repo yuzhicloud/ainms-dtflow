@@ -25,13 +25,15 @@ def hex_to_chinese(hex_str):
 
 
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
-                                csv_writer):
+                                filename):
     engine = SnmpEngine()
     user_data = UsmUserData(user, authKey, privKey, authProtocol=authProtocol, privProtocol=privProtocol)
     target = UdpTransportTarget((ip, port))
     context = ContextData()
 
     table_data = {}
+    with open(filename, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
 
     logging.debug("Starting to fetch SNMP table data.")
     for col_index in range(1, max_cols + 1):
@@ -102,7 +104,8 @@ def snmp_main(ips):
             # fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
             #                         csv_writer)
             csv_writer = csv.writer(csvfile)
-            thread = threading.Thread(target=fetch_data_and_write_by_row, args=(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csv_writer))
+            filename = f'snmp_table_data_{suffix}.csv'
+            thread = threading.Thread(target=fetch_data_and_write_by_row, args=(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, filename))
             threads.append(thread)
             thread.start()
 
