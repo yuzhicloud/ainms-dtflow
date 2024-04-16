@@ -94,7 +94,8 @@ def snmp_main(ips):
     max_cols = 7  # Number of columns in the table
 
     for ip in ips:
-        with open('snmp_table_data.csv', 'w', newline='') as csvfile:
+        suffix = ip.split('.')[-1]
+        with open(f'snmp_table_data_{suffix}.csv', 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                     csv_writer)
