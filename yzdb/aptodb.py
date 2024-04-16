@@ -70,6 +70,7 @@ def insert_csv_data_to_db(engine, csv_files, table_name, if_exists='append', ind
             'group_id': 'group_id'  # 确保这个字段也正确映射
         }, inplace=True)
 
+        df.replace({'': None, 'NULL': None, 'null': None}, inplace=True)
         # 确保DataFrame包含数据库表的所有列，未提及的列设置为None
         expected_columns = ['id', 'nedn', 'neid', 'aliasname', 'nename', 'necategory', 'netype',
                             'nevendorname', 'neesn', 'neip', 'nemac', 'version', 'nestate',
