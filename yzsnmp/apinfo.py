@@ -107,8 +107,6 @@ def thread_function(ip, port, user, authKey, privKey, authProtocol, privProtocol
 
 
 def snmp_main(ips):
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
-
     port = 161
     user = 'clypgac'
     authKey = 'longyuandianli@123'

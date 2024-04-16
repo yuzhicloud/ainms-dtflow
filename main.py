@@ -1,26 +1,12 @@
 import os
 import logging
+from datetime import datetime
+
 from sqlalchemy import create_engine, text
 import yzsnmp
 import shutil
 import yzdb
 from yzdb import process_ap_name_multithreaded, aptodb, apgtodb
-
-# Setup logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-def check_log_directory(dir_path):
-    # 检查目录是否存在，如果不存在则创建
-    if not os.path.exists(dir_path):
-        try:
-            os.makedirs(dir_path)
-            logging.info(f"Directory created: {dir_path}")
-        except Exception as e:
-            logging.error(f'Failed to create directory {dir_path}. Reason: {e}')
-            return  # 如果创建目录失败，则退出函数
-    logging.debug(f"Directory exists: {dir_path}")
-
 
 # Define the clear_directory function to accept a path to clear
 def clear_csv_directory(csv_dir):
@@ -34,6 +20,35 @@ def clear_csv_directory(csv_dir):
                 shutil.rmtree(file_path)
         except Exception as e:
             logging.error(f'Failed to delete {file_path}. Reason: {e}')
+
+
+def setup_logging():
+    # 确保 logs 目录存在
+    try:
+        log_directory = "logs"
+        if not os.path.exists(log_directory):
+            os.makedirs(log_directory)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_filename = f"ainms_dtflow_{timestamp}.log"
+        log_filepath = os.path.join(log_directory, log_filename)
+
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            filename=log_filepath,
+            filemode='w'
+        )
+
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        console_handler.setFormatter(formatter)
+        logging.getLogger().addHandler(console_handler)
+        return log_filepath
+    except Exception as e:
+        print(f"Failed to set up logging: {e}")
+        raise
 
 
 # Database configuration
@@ -70,11 +85,14 @@ def truncate_table(engine, table_name):
 
 
 def main():
+    log_filepath = setup_logging()
+    logging.info(f"Logging to {log_filepath}")
+    logging.info("Script started.")
+
     csv_dir = 'csvfiles'  # Relative path to csvfiles directory
     # Print current working directory and Python sys.path for debugging
     logging.info("Current working directory: %s", os.getcwd())
 
-    check_log_directory("logs")
     clear_csv_directory(csv_dir)
     logging.info("CSV directory cleared.")
 

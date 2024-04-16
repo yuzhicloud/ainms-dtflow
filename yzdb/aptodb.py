@@ -5,9 +5,6 @@ import pandas as pd
 import numpy as np
 import logging
 
-# Set up logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
 
 def create_csv(csv_dir, allapg_file_path, snmp_csv_files):
     # Load apg.csv
@@ -51,7 +48,6 @@ def create_csv(csv_dir, allapg_file_path, snmp_csv_files):
 
 
 def insert_csv_data_to_db(engine, csv_files, table_name, if_exists='append', index=False):
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
     for csv_file in csv_files:
         logging.debug(f"Loading data from {csv_file}")
