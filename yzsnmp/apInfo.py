@@ -3,6 +3,26 @@ import csv
 import logging
 
 
+# 以下配置需要根据你的实际情况进行修改
+def hex_to_chinese(hex_str):
+    """
+    Convert a hex string to a Chinese string (assuming UTF-8 encoding).
+    """
+    if not isinstance(hex_str, str):
+        return "Invalid format"
+    hex_str = hex_str.replace('0x', '').lower()
+    if not hex_str or len(hex_str) % 2 != 0:
+        return "Not a valid hexadecimal value"
+    try:
+        bytes_str = bytes.fromhex(hex_str)
+    except ValueError:
+        return "Contains non-hexadecimal characters"
+    try:
+        return bytes_str.decode('utf-8')
+    except UnicodeDecodeError:
+        return "Decoding failed"
+
+
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                 csv_writer):
     engine = SnmpEngine()
@@ -23,7 +43,6 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
         while True:
             try:
                 errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
-
                 if errorIndication:
                     logging.error("Error: %s", errorIndication)
                     break
@@ -34,6 +53,8 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                     for varBind in varBinds:
                         oid, value = varBind
                         if str(oid).startswith(col_oid):
+                            if str(oid) == '1.3.6.1.4.1.2011.6.139.13.3.3.1.5':
+                                value = hex_to_chinese(value.prettyPrint())
                             col_data.append(value.prettyPrint())
                             logging.debug("Fetched value %s for OID %s", value.prettyPrint(), oid)
                         else:
