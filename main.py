@@ -10,8 +10,20 @@ from yzdb import process_ap_name_multithreaded, aptodb, apgtodb
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+def check_log_directory(dir_path):
+    # 检查目录是否存在，如果不存在则创建
+    if not os.path.exists(dir_path):
+        try:
+            os.makedirs(dir_path)
+            logging.info(f"Directory created: {dir_path}")
+        except Exception as e:
+            logging.error(f'Failed to create directory {dir_path}. Reason: {e}')
+            return  # 如果创建目录失败，则退出函数
+    logging.debug(f"Directory exists: {dir_path}")
+
+
 # Define the clear_directory function to accept a path to clear
-def clear_directory(csv_dir):
+def clear_csv_directory(csv_dir):
     # Attempt to clear the directory
     for filename in os.listdir(csv_dir):
         file_path = os.path.join(csv_dir, filename)
@@ -60,20 +72,21 @@ def truncate_table(engine, table_name):
 def main():
     csv_dir = 'csvfiles'  # Relative path to csvfiles directory
     # Print current working directory and Python sys.path for debugging
-    # logging.info("Current working directory: %s", os.getcwd())
-    #
-    # clear_directory(csv_dir)
-    # logging.info("CSV directory cleared.")
-    #
-    # # Call the SNMP main function and get the list of processed CSV files
-    # ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
-    # snmp_csv_files = yzsnmp.snmp_main(ips)
-    # logging.debug("Processed files:", snmp_csv_files)
+    logging.info("Current working directory: %s", os.getcwd())
 
-    snmp_csv_files = ['snmp_table_data_10_170_69_101.csv',
-                      'snmp_table_data_10_170_69_104.csv',
-                      'snmp_table_data_10_170_69_107.csv',
-                      'snmp_table_data_10_170_69_110.csv']
+    check_log_directory("logs")
+    clear_csv_directory(csv_dir)
+    logging.info("CSV directory cleared.")
+
+    # Call the SNMP main function and get the list of processed CSV files
+    ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
+    snmp_csv_files = yzsnmp.snmp_main(ips)
+    logging.debug("Processed files:", snmp_csv_files)
+
+    # snmp_csv_files = ['snmp_table_data_10_170_69_101.csv',
+    #                   'snmp_table_data_10_170_69_104.csv',
+    #                   'snmp_table_data_10_170_69_107.csv',
+    #                   'snmp_table_data_10_170_69_110.csv']
     # snmp_csv_files = ['snmp_table_data_10_170_69_100.csv',
     #                   'snmp_table_data_10_170_69_103.csv',
     #                   'snmp_table_data_10_170_69_106.csv',
