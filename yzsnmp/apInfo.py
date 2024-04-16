@@ -2,6 +2,7 @@ from pysnmp.hlapi import *
 import csv
 import logging
 
+
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                 csv_writer):
     engine = SnmpEngine()
@@ -57,11 +58,11 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
     logging.info("Table data fetching and CSV writing completed.")
 
 
-def snmp_main():
+def snmp_main(ips):
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
     # 以下配置需要根据你的实际情况进行修改
-    ip = '10.170.69.101'
+    # ip = '10.170.69.101'
     port = 161
     user = 'clypgac'
     authKey = 'longyuandianli@123'
@@ -69,15 +70,17 @@ def snmp_main():
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
-    max_cols = 18  # Number of columns in the table
+    max_cols = 7  # Number of columns in the table
 
-    with open('snmp_table_data.csv', 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
+    for ip in ips:
+        with open('snmp_table_data.csv', 'w', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                     csv_writer)
 
     logging.info("Table data fetching and CSV writing completed.")
 
 
 if __name__ == "__main__":
-    snmp_main()
+    ips = ['10.170.69.101', '10.170.69.102', '10.170.69.103', '10.170.69.104']  # Replace with your actual IPs
+    snmp_main(ips)
