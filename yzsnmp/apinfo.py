@@ -86,6 +86,7 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
     logging.info(f"Table data fetching completed for IP: {ip}. Now writing to CSV.")
 
     # Write the collected data to CSV
+    logging.debug(f"Number of rows ready to write for IP {ip}: {len(table_data)}")
     for row_index in sorted(table_data.keys()):
         csv_writer.writerow(table_data[row_index])
         logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}")
