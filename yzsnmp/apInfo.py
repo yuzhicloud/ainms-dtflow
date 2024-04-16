@@ -1,3 +1,4 @@
+import threading
 from pysnmp.hlapi import *
 import csv
 import logging
@@ -93,16 +94,23 @@ def snmp_main(ips):
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
     max_cols = 7  # Number of columns in the table
 
+    threads = []
     for ip in ips:
         suffix = ip.split('.')[-1]
         with open(f'snmp_table_data_{suffix}.csv', 'w', newline='') as csvfile:
+            # csv_writer = csv.writer(csvfile)
+            # fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
+            #                         csv_writer)
             csv_writer = csv.writer(csvfile)
-            fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
-                                    csv_writer)
+            thread = threading.Thread(target=fetch_data_and_write_by_row, args=(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, csv_writer))
+            threads.append(thread)
+            thread.start()
 
+    for thread in threads:
+        thread.join()
     logging.info("Table data fetching and CSV writing completed.")
 
 
 if __name__ == "__main__":
-    ips = ['10.170.69.101', '10.170.69.102', '10.170.69.103', '10.170.69.104']  # Replace with your actual IPs
+    ips = ['10.170.69.101', '10.170.69.102', '10.170.69.103', '10.170.69.104']  
     snmp_main(ips)
