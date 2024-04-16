@@ -87,9 +87,13 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
 
     # Write the collected data to CSV
     logging.debug(f"Number of rows ready to write for IP {ip}: {len(table_data)}")
-    for row_index in sorted(table_data.keys()):
-        csv_writer.writerow(table_data[row_index])
-        logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}")
+    # for row_index in sorted(table_data.keys()):
+    #     csv_writer.writerow(table_data[row_index])
+    #     logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}")
+    #
+    for row_index, row_data in sorted(table_data.items()):
+        csv_writer.writerow(row_data)
+        logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}, Data: {row_data}")
 
     logging.info(f"CSV writing completed for IP: {ip}.")
 
