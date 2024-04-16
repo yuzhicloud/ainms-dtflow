@@ -24,25 +24,21 @@ def hex_to_chinese(hex_str):
         return "Decoding failed"
 
 
-def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
-                                filename):
+def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, filename):
     engine = SnmpEngine()
     user_data = UsmUserData(user, authKey, privKey, authProtocol=authProtocol, privProtocol=privProtocol)
     target = UdpTransportTarget((ip, port))
     context = ContextData()
 
-    table_data = {}
-    with open(filename, 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-
     logging.debug("Starting to fetch SNMP table data.")
+    table_data = []
     for col_index in range(1, max_cols + 1):
         col_oid = f"{base_oid}.{col_index}"
         logging.debug("Fetching data for column OID: %s", col_oid)
-        col_data = []
 
         iterator = nextCmd(engine, user_data, target, context, ObjectType(ObjectIdentity(col_oid)), lexicographicMode=False)
 
+        col_data = []
         while True:
             try:
                 errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
@@ -58,26 +54,15 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                         if str(oid).startswith(col_oid):
                             if str(oid) == '1.3.6.1.4.1.2011.6.139.13.3.3.1.5':
                                 value = hex_to_chinese(value.prettyPrint())
-                            col_data.append(value.prettyPrint())
-                            logging.debug("Fetched value %s for OID %s", value.prettyPrint(), oid)
-                        else:
-                            logging.debug("Reached the end of column OID: %s", col_oid)
-                            break
-                    if not str(oid).startswith(col_oid):
-                        break
+                            col_data.append(value)
             except StopIteration:
-                logging.debug("Completed fetching data for column OID: %s", col_oid)
                 break
+        table_data.append(col_data)
 
-        table_data[col_index] = col_data
-
-    logging.debug("Completed fetching table data. Now writing to CSV.")
-    max_rows = max(len(col) for col in table_data.values())
-
-    for row_index in range(max_rows):
-        row = [table_data[col_index][row_index] if row_index < len(table_data[col_index]) else '' for col_index in range(1, max_cols + 1)]
-        csv_writer.writerow(row)
-        logging.debug("Wrote row %d to CSV", row_index + 1)
+    with open(filename, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        for row_data in zip(*table_data):
+            csv_writer.writerow(row_data)
 
     logging.info("Table data fetching and CSV writing completed.")
 
@@ -94,20 +79,15 @@ def snmp_main(ips):
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
-    max_cols = 7  # Number of columns in the table
+    max_cols = 3  # Number of columns in the table
 
     threads = []
     for ip in ips:
         suffix = ip.split('.')[-1]
-        with open(f'snmp_table_data_{suffix}.csv', 'w', newline='') as csvfile:
-            # csv_writer = csv.writer(csvfile)
-            # fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
-            #                         csv_writer)
-            csv_writer = csv.writer(csvfile)
-            filename = f'snmp_table_data_{suffix}.csv'
-            thread = threading.Thread(target=fetch_data_and_write_by_row, args=(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, filename))
-            threads.append(thread)
-            thread.start()
+        filename = f'snmp_table_data_{suffix}.csv'
+        thread = threading.Thread(target=fetch_data_and_write_by_row, args=(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, filename))
+        threads.append(thread)
+        thread.start()
 
     for thread in threads:
         thread.join()
@@ -115,5 +95,6 @@ def snmp_main(ips):
 
 
 if __name__ == "__main__":
-    ips = ['10.170.69.101', '10.170.69.102', '10.170.69.103', '10.170.69.104']  
+    # ips = ['10.170.69.101', '10.170.69.102', '10.170.69.103', '10.170.69.104']  
+    ips = ['10.170.69.101']
     snmp_main(ips)
