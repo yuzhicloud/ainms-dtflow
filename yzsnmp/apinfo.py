@@ -87,13 +87,9 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
 
     # Write the collected data to CSV
     logging.debug(f"Number of rows ready to write for IP {ip}: {len(table_data)}")
-    # for row_index in sorted(table_data.keys()):
-    #     csv_writer.writerow(table_data[row_index])
-    #     logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}")
-    #
     for row_index, row_data in sorted(table_data.items()):
         csv_writer.writerow(row_data)
-        logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}, Data: {row_data}")
+        # logging.debug(f"Wrote row {row_index} to CSV for IP: {ip}, Data: {row_data}")
 
     logging.info(f"CSV writing completed for IP: {ip}.")
 
@@ -119,7 +115,7 @@ def snmp_main(ips):
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
-    max_cols = 8  # Number of columns in the table
+    max_cols = 7  # Number of columns in the table
 
     # 定义列标题
     # column_titles = ['hwWlanApMac', 'hwWlanApSn', 'hwWlanApTypeInfo', 'hwWlanApName', 'hwWlanApGroup',
@@ -129,7 +125,7 @@ def snmp_main(ips):
     #                  'hwWlanApRunTime']
 
     column_titles = ['hwWlanApMac', 'hwWlanApSn', 'hwWlanApTypeInfo', 'hwWlanApName', 'hwWlanApGroup',
-                     'hwWlanApRunState', 'hwWlanApSoftwareVersion', 'hwWlanApHardwareVersion']
+                     'hwWlanApRunState', 'hwWlanApSoftwareVersion']
     threads = []
     snmp_csv_files = []
     for ip in ips:
