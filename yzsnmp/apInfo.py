@@ -25,7 +25,7 @@ def hex_to_chinese(hex_str):
 
 
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
-                                csv_writer):
+                                filename):
     engine = SnmpEngine()
     user_data = UsmUserData(user, authKey, privKey, authProtocol=authProtocol, privProtocol=privProtocol)
     target = UdpTransportTarget((ip, port))
@@ -72,16 +72,27 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
 
         table_data[col_index] = col_data
 
+    # logging.debug("Completed fetching table data. Now writing to CSV.")
+    # max_rows = max(len(col) for col in table_data.values())
+
+    # for row_index in range(max_rows):
+    #     row = [table_data[col_index][row_index] if row_index < len(table_data[col_index]) else '' for col_index in range(1, max_cols + 1)]
+    #     csv_writer.writerow(row)
+    #     logging.debug("Wrote row %d to CSV", row_index + 1)
+
+    # logging.info("Table data fetching and CSV writing completed.")
+
     logging.debug("Completed fetching table data. Now writing to CSV.")
     max_rows = max(len(col) for col in table_data.values())
 
-    for row_index in range(max_rows):
-        row = [table_data[col_index][row_index] if row_index < len(table_data[col_index]) else '' for col_index in range(1, max_cols + 1)]
-        csv_writer.writerow(row)
-        logging.debug("Wrote row %d to CSV", row_index + 1)
+    with open(filename, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        for row_index in range(max_rows):
+            row = [table_data[col_index][row_index] if row_index < len(table_data[col_index]) else '' for col_index in range(1, max_cols + 1)]
+            csv_writer.writerow(row)
+            logging.debug("Wrote row %d to CSV", row_index + 1)
 
     logging.info("Table data fetching and CSV writing completed.")
-
 
 
 def snmp_main(ips):
@@ -102,8 +113,6 @@ def snmp_main(ips):
     for ip in ips:
         suffix = ip.split('.')[-1]
         filename = f'snmp_table_data_{suffix}.csv'
-        with open('snmp_table_data.csv', 'w', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)
         thread = threading.Thread(
             target=fetch_data_and_write_by_row, 
             args=(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols, filename))
