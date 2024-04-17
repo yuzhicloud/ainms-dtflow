@@ -100,6 +100,9 @@ def main():
     # Call the SNMP main function and get the list of processed CSV files
     ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
     snmp_csv_files = yzsnmp.snmp_main(ips)
+    if not snmp_csv_files or len(snmp_csv_files) < len(ips):
+        logging.error("Failed to process SNMP data for all IPs. Exiting.")
+        raise SystemExit("Failed to process SNMP data for all IPs.")
     logging.debug(f"Processed files: {snmp_csv_files}")
 
     # snmp_csv_files = ['snmp_table_data_10_170_69_101.csv',

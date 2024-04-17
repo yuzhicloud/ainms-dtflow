@@ -7,9 +7,12 @@ import logging
 
 
 def create_csv(csv_dir, allapg_file_path, snmp_csv_files):
-    # Load apg.csv
+    if snmp_csv_files is None:
+        logging.error("No SNMP CSV files provided.")
+        return
+    # Load allAPG.csv
     apg_df = pd.read_csv(allapg_file_path)
-    logging.debug("Loaded apg.csv")
+    logging.debug("Loaded allAPG.csv")
 
     output_files = []  # 初始化存储生成的文件名列表
     for snmp_file_name in snmp_csv_files:
