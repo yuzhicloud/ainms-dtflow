@@ -2,7 +2,7 @@ import os
 from pysnmp.hlapi import *
 import csv
 import logging
-from threading import Thread
+import threading 
 
 
 # Update the generate_csv_filename to clear the directory before generating the filename
