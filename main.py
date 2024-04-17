@@ -100,7 +100,7 @@ def main():
     ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
     snmp_csv_files = yzsnmp.snmp_main(ips)
     # wait form 1 min to write the snmp data to csv files
-    time.sleep(60)
+    time.sleep(300)
     if not snmp_csv_files or len(snmp_csv_files) < len(ips):
         logging.error("Failed to process SNMP data for all IPs. Exiting.")
         raise SystemExit("Failed to process SNMP data for all IPs.")
