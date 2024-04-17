@@ -98,7 +98,7 @@ def snmp_main():
 
     for ip in ips:
         filename = f'snmp_table_data_{ip}.csv'
-        with open('snmp_table_data.csv', 'w', newline='') as csvfile:
+        with open(filename, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                     csv_writer)
