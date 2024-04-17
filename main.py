@@ -1,7 +1,7 @@
 import os
 import logging
-from datetime import datetime, time
-
+from datetime import datetime
+import time
 from sqlalchemy import create_engine, text
 import yzsnmp
 import shutil
