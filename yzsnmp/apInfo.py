@@ -2,6 +2,26 @@ from pysnmp.hlapi import *
 import csv
 import logging
 
+
+def hex_to_chinese(hex_str):
+    """
+    Convert a hex string to a Chinese string (assuming UTF-8 encoding).
+    """
+    if not isinstance(hex_str, str):
+        return "Invalid format"
+    hex_str = hex_str.replace('0x', '').lower()
+    if not hex_str or len(hex_str) % 2 != 0:
+        return "Not a valid hexadecimal value"
+    try:
+        bytes_str = bytes.fromhex(hex_str)
+    except ValueError:
+        return "Contains non-hexadecimal characters"
+    try:
+        return bytes_str.decode('utf-8')
+    except UnicodeDecodeError:
+        return "Decoding failed"
+    
+
 def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, privProtocol, base_oid, max_cols,
                                 csv_writer):
     engine = SnmpEngine()
@@ -33,7 +53,11 @@ def fetch_data_and_write_by_row(ip, port, user, authKey, privKey, authProtocol, 
                     for varBind in varBinds:
                         oid, value = varBind
                         if str(oid).startswith(col_oid):
-                            col_data.append(value.prettyPrint())
+                            if col_oid.endswith('1.5'):
+                                decoded_value = hex_to_chinese(value.prettyPrint())
+                                col_data.append(decoded_value)
+                            else:
+                                col_data.append(value.prettyPrint())
                             logging.debug("Fetched value %s for OID %s", value.prettyPrint(), oid)
                         else:
                             logging.debug("Reached the end of column OID: %s", col_oid)
