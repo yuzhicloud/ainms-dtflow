@@ -7,6 +7,7 @@ import logging
 
 
 def create_csv(csv_dir, allapg_file_path, snmp_csv_files):
+    logging.debug(f"Creating CSV files for database insertion.{csv_dir }:{allapg_file_path}: {snmp_csv_files }")
     if snmp_csv_files is None:
         logging.error("No SNMP CSV files provided.")
         return

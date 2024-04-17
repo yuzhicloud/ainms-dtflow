@@ -54,8 +54,8 @@ def setup_logging():
 db_config = {
     'user': 'root',
     'password': 'RootPassword123!',
-    # 'host': '192.168.22.5',
-    'host': '10.170.248.35',
+    'host': '192.168.22.5',
+    # 'host': '10.170.248.35',
     'port': 13306,
     'database': 'ainms'
 }
@@ -99,11 +99,8 @@ def main():
     # Call the SNMP main function and get the list of processed CSV files
     ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
     snmp_csv_files = yzsnmp.snmp_main(ips)
-    # wait form 1 min to write the snmp data to csv files
+    # wait form 5 mins to write the snmp data to csv files
     time.sleep(300)
-    # if not snmp_csv_files or len(snmp_csv_files) < len(ips):
-    #     logging.error("Failed to process SNMP data for all IPs. Exiting.")
-    #     raise SystemExit("Failed to process SNMP data for all IPs.")
     logging.debug(f"Processed files: {snmp_csv_files}")
 
     # snmp_csv_files = ['snmp_table_data_10_170_69_101.csv',
@@ -117,7 +114,7 @@ def main():
 
     allapg_file_path = process_ap_name_multithreaded(csv_dir, snmp_csv_files)
     logging.debug(f"allAPG file path: {allapg_file_path}")
-
+    time.sleep(60)
     engine = create_db_engine(db_config)
     logging.debug(" Engine created successfully.")
     apg_table_name = 'access_point_group'
@@ -129,10 +126,11 @@ def main():
 
     apgtodb.load_data_to_database(engine, allapg_file_path, apg_table_name)
     ap_csv_files = aptodb.create_csv(csv_dir, allapg_file_path, snmp_csv_files)
+    time.sleep(60)
     aptodb.insert_csv_data_to_db(engine, ap_csv_files, ap_table_name)
 
     logging.info("Data loaded to database successfully.")
-    logging.info("Script execution complete.")
+    logging.info("===Script execution complete.===")
 
 
 if __name__ == "__main__":
