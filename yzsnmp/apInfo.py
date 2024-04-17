@@ -99,7 +99,6 @@ def snmp_main(ips):
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
     # 以下配置需要根据你的实际情况进行修改
-    # ip = '10.170.69.101'
     port = 161
     user = 'clypgac'
     authKey = 'longyuandianli@123'
@@ -125,6 +124,5 @@ def snmp_main(ips):
 
 
 if __name__ == "__main__":
-    # ips = ['10.170.69.101', '10.170.69.102', '10.170.69.103', '10.170.69.104']  
-    ips = ['10.170.69.101']
+    ips = ['10.170.69.101', '10.170.69.104', '10.170.69.104', '10.170.69.110']  
     snmp_main(ips)
