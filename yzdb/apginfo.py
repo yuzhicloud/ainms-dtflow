@@ -16,15 +16,25 @@ def process_file(csv_dir,file_name, controller_id, powerplant_dict, dfs_list):
         df = pd.read_csv(file_path)
         logging.debug(f"Successfully processed the file: {file_path}")
         matched_rows = []
+        # for _, row in df.iterrows():
+        #     for power_plant_name, power_plant_id in powerplant_dict.items():
+        #         if power_plant_name in row['hwWlanApGroup']:
+        #             with id_lock:
+        #                 current_id = next_id
+        #                 next_id += 1
+        #             matched_rows.append([current_id, row['hwWlanApGroup'], controller_id, power_plant_id])
+        #             break
+
         for _, row in df.iterrows():
+            hwWlanApGroup = str(row['hwWlanApGroup'])
             for power_plant_name, power_plant_id in powerplant_dict.items():
-                if power_plant_name in row['hwWlanApGroup']:
+                if power_plant_name in hwWlanApGroup:
                     with id_lock:
                         current_id = next_id
                         next_id += 1
-                    matched_rows.append([current_id, row['hwWlanApGroup'], controller_id, power_plant_id])
+                    matched_rows.append([current_id, hwWlanApGroup, controller_id, power_plant_id])
                     break
-
+        
         if matched_rows:
             new_df = pd.DataFrame(matched_rows, columns=['id', 'name', 'controller_id', 'power_plant_id'])
             new_df = new_df.drop_duplicates(subset=['name', 'controller_id', 'power_plant_id'])
@@ -33,10 +43,10 @@ def process_file(csv_dir,file_name, controller_id, powerplant_dict, dfs_list):
 
 def process_ap_name_multithreaded(csv_dir, snmp_csv_files ):
     # 打印当前工作目录
-    logging.debug("Current working directory:", os.getcwd())
+    logging.debug(f"Current working directory:{os.getcwd()}")
     # 获取当前文件的目录路径
     dir_path = os.path.dirname(__file__)
-    logging.debug(dir_path)
+    logging.debug(f"process_ap_name_multithread::{dir_path}")
     # 构建 csv 文件的完整路径
     csv_file_path = os.path.join(dir_path, 'pp.csv')
     logging.debug(csv_file_path)
