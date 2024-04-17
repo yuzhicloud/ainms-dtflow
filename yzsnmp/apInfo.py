@@ -106,7 +106,7 @@ def snmp_main(ips):
     authProtocol = usmHMAC192SHA256AuthProtocol
     privProtocol = usmAesCfb256Protocol
     base_oid = '1.3.6.1.4.1.2011.6.139.13.3.3.1'
-    max_cols = 3  # Number of columns in the table
+    max_cols = 7  # Number of columns in the table
 
     threads = []
     for ip in ips:
