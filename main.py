@@ -55,8 +55,8 @@ def setup_logging():
 db_config = {
     'user': 'root',
     'password': 'RootPassword123!',
-    'host': '192.168.22.5',
-    #'host': '10.170.248.35',
+    # 'host': '192.168.22.5',
+    'host': '10.170.248.35',
     'port': 13306,
     'database': 'ainms'
 }
@@ -94,18 +94,18 @@ def main():
     # Print current working directory and Python sys.path for debugging
     logging.info(f"Current working directory: {os.getcwd()}")
 
-    # clear_csv_directory(csv_dir)
-    # logging.info("CSV directory cleared.")
+    clear_csv_directory(csv_dir)
+    logging.info("CSV directory cleared.")
 
-    # # Call the SNMP main function and get the list of processed CSV files
-    # ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
-    # snmp_csv_files = yzsnmp.snmp_main(ips)
-    # logging.debug(f"Processed files: {snmp_csv_files}")
+    # Call the SNMP main function and get the list of processed CSV files
+    ips = ['10.170.69.101', '10.170.69.104', '10.170.69.107', '10.170.69.110']
+    snmp_csv_files = yzsnmp.snmp_main(ips)
+    logging.debug(f"Processed files: {snmp_csv_files}")
 
-    snmp_csv_files = ['snmp_table_data_10_170_69_101.csv',
-                      'snmp_table_data_10_170_69_104.csv',
-                      'snmp_table_data_10_170_69_107.csv',
-                      'snmp_table_data_10_170_69_110.csv']
+    # snmp_csv_files = ['snmp_table_data_10_170_69_101.csv',
+    #                   'snmp_table_data_10_170_69_104.csv',
+    #                   'snmp_table_data_10_170_69_107.csv',
+    #                   'snmp_table_data_10_170_69_110.csv']
     # snmp_csv_files = ['snmp_table_data_10_170_69_100.csv',
     #                   'snmp_table_data_10_170_69_103.csv',
     #                   'snmp_table_data_10_170_69_106.csv',
